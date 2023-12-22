@@ -28,20 +28,19 @@ type Cotacao struct {
 
 func main(){
 
-	_, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	// db.AutoMigrate(&Cotacao{})
-
+	db.AutoMigrate(&Cotacao{})
 
 	cotacao, err := getCotacao()
 	if err != nil {
 		panic(err)
 	}
 
-	// db.Create(&cotacao)
+	db.Create(&cotacao)
 
 	fmt.Println(cotacao)
 }
