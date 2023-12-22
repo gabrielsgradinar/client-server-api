@@ -13,29 +13,27 @@ import (
 )
 
 type Cotacao struct {
-	Usdbrl struct {
-		Code       string `json:"code"`
-		Codein     string `json:"codein"`
-		Name       string `json:"name"`
-		High       string `json:"high"`
-		Low        string `json:"low"`
-		VarBid     string `json:"varBid"`
-		PctChange  string `json:"pctChange"`
-		Bid        string `json:"bid"`
-		Ask        string `json:"ask"`
-		Timestamp  string `json:"timestamp"`
-		CreateDate string `json:"create_date"`
-	} `json:"USDBRL"`
+	Code       string `json:"code"`
+	Codein     string `json:"codein"`
+	Name       string `json:"name"`
+	High       string `json:"high"`
+	Low        string `json:"low"`
+	VarBid     string `json:"varBid"`
+	PctChange  string `json:"pctChange"`
+	Bid        string `json:"bid"`
+	Ask        string `json:"ask"`
+	Timestamp  string `json:"timestamp"`
+	CreateDate string `json:"create_date"`
 }
 
 func main(){
 
-	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
+	_, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&Cotacao{})
+	// db.AutoMigrate(&Cotacao{})
 
 
 	cotacao, err := getCotacao()
@@ -43,9 +41,9 @@ func main(){
 		panic(err)
 	}
 
-	db.Create(&cotacao)
+	// db.Create(&cotacao)
 
-	fmt.Println(cotacao.Usdbrl)
+	fmt.Println(cotacao)
 }
 
 
@@ -69,8 +67,16 @@ func getCotacao() (*Cotacao, error){
 		return nil, err
 	}
 
+	var filterJson map[string]interface{}
+	json.Unmarshal([]byte(res), &filterJson)
+
+	jsonStr, err := json.Marshal(filterJson["USDBRL"])
+    if err != nil {
+        return nil, err
+    }
+
 	var data Cotacao
-	err = json.Unmarshal(res, &data)
+	err = json.Unmarshal(jsonStr, &data)
 	if err != nil {
 		return nil, err
 	}
