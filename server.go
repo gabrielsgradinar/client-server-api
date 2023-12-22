@@ -66,14 +66,20 @@ func getCotacao() (*Cotacao, error){
 		return nil, err
 	}
 
+	// armazena a resporta em um map
 	var filterJson map[string]interface{}
-	json.Unmarshal([]byte(res), &filterJson)
+	err = json.Unmarshal([]byte(res), &filterJson)
+	if err != nil {
+        return nil, err
+    }
 
+	// transformas os dados dentro da chave USDBRL para json novamente
 	jsonStr, err := json.Marshal(filterJson["USDBRL"])
     if err != nil {
         return nil, err
     }
 
+	// faz o unmarshal desses dados para a struct de Cotacao
 	var data Cotacao
 	err = json.Unmarshal(jsonStr, &data)
 	if err != nil {
