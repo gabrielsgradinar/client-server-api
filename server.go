@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -25,6 +26,10 @@ type Cotacao struct {
 	Ask        string `json:"ask"`
 	Timestamp  string `json:"timestamp"`
 	CreateDate string `json:"create_date"`
+}
+
+type CotacaoResponse struct {
+	Bid        string `json:"bid"`
 }
 
 func (Cotacao) TableName() string {
@@ -57,16 +62,29 @@ func getCotacaoHandler(w http.ResponseWriter, r *http.Request, db *gorm.DB) {
 		return
 	}
 
-	db.Create(&cotacao)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	result, err := json.Marshal(cotacao)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	db.WithContext(ctx).Create(&cotacao)
+
+	select{
+	case <-ctx.Done():
+		log.Println("Database Context error:", ctx.Err())
+		w.WriteHeader(http.StatusRequestTimeout)
 		return
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		result, err := json.Marshal(CotacaoResponse{Bid: cotacao.Bid})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(result)
+		log.Println("Request processed !", string(result))
 	}
-	w.Write(result)
+
+
 }
 
 func getCotacaoData() (*Cotacao, error){
@@ -75,6 +93,7 @@ func getCotacaoData() (*Cotacao, error){
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
 	if err != nil{
+		log.Println("Request Context error:", err)
 		return nil, err
 	}
 
