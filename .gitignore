@@ -23,3 +23,6 @@ go.work
 
 # Database file
 cotacao.db
+
+
+cotacao.txt

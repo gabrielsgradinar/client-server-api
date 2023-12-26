@@ -15,6 +15,7 @@ import (
 const tableName = "cotacoes"
 
 type Cotacao struct {
+	ID    int  `gorm:"primaryKey"`
 	Code       string `json:"code"`
 	Codein     string `json:"codein"`
 	Name       string `json:"name"`
@@ -38,7 +39,7 @@ func (Cotacao) TableName() string {
 
 
 func main(){
-	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("./cotacao.db"), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect database")
 	}
