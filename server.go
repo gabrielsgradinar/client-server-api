@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var tableName = "cotacoes"
+
 type Cotacao struct {
 	Code       string `json:"code"`
 	Codein     string `json:"codein"`
@@ -26,14 +28,18 @@ type Cotacao struct {
 	CreateDate string `json:"create_date"`
 }
 
+func (Cotacao) TableName() string {
+	return tableName
+}
+
 func main(){
 
 	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		panic("Failed to connect database")
 	}
 
-	db.AutoMigrate(&Cotacao{})
+	db.Table(tableName).AutoMigrate(&Cotacao{})
 
 	cotacao, err := getCotacao()
 	if err != nil {
