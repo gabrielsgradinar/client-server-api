@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var tableName = "cotacoes"
+const tableName = "cotacoes"
 
 type Cotacao struct {
 	Code       string `json:"code"`
@@ -32,27 +31,45 @@ func (Cotacao) TableName() string {
 	return tableName
 }
 
-func main(){
 
+func main(){
 	db, err := gorm.Open(sqlite.Open("cotacao.db"), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect database")
 	}
-
 	db.Table(tableName).AutoMigrate(&Cotacao{})
 
-	cotacao, err := getCotacao()
+	http.HandleFunc("/cotacao", func(w http.ResponseWriter, r *http.Request) {
+		getCotacaoHandler(w, r, db)
+	})
+	http.ListenAndServe(":8080", nil)
+}
+
+func getCotacaoHandler(w http.ResponseWriter, r *http.Request, db *gorm.DB) {
+	if r.URL.Path != "/cotacao" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	cotacao, err := getCotacaoData()
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	db.Create(&cotacao)
 
-	fmt.Println(cotacao)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	result, err := json.Marshal(cotacao)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(result)
 }
 
-
-func getCotacao() (*Cotacao, error){
+func getCotacaoData() (*Cotacao, error){
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
